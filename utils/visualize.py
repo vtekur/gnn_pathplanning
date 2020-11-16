@@ -133,11 +133,12 @@ class Animation:
 
     def save(self, file_name, speed):
 
+        
         self.anim.save(
             file_name,
             "ffmpeg",
             fps=10 * speed,
-            dpi=200),
+            dpi=200),8
 
         # savefig_kwargs={"pad_inches": 0, "bbox_inches": "tight"})
 
@@ -303,17 +304,19 @@ class Animation:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--map", help="input file containing map")
-    parser.add_argument("--schedule", help="schedule for agents")
-    parser.add_argument("--GSO", help="record of adjacency matrix for agents")
+    parser.add_argument('--local_dir', default='/Users/vtek/gnn_pathplanning/')
     parser.add_argument('--nGraphFilterTaps', type=int, default=3)
+    parser.add_argument('--type')
+    parser.add_argument('--caseId', default='00000')
+    parser.add_argument("--speed", type=int, default=2, help="speedup-factor")
+    parser.add_argument('--log_time_trained', type=str, default='0')
     parser.add_argument('--id_chosenAgent', type=int, default=0)
-    parser.add_argument('--video', dest='video', default=None,
-                        help="output video file (or leave empty to show on screen)")
-    parser.add_argument("--speed", type=int, default=1, help="speedup-factor")
     args = parser.parse_args()
-
-
+    base_dir = args.local_dir + 'Results_best/AnimeDemo/{}/map20x20_rho1_10Agent/K{}_HS0/TR_M20p1_10Agent/{}/commR_6/'.format(args.type, args.nGraphFilterTaps,args.log_time_trained)
+    args.map = base_dir + 'input/successCases_ID{}.yaml'.format(args.caseId)
+    args.schedule = base_dir+'predict_success/successCases_ID{}.yaml'.format(args.caseId)
+    args.GSO = base_dir+'GSO/successCases_ID{}.mat'.format(args.caseId)
+    args.video = args.local_dir + 'Results_best/' +  '/video_K{}_{}.mp4'.format(args.nGraphFilterTaps, args.type)
     animation = Animation(args)
 
     if args.video:

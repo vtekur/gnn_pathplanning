@@ -118,6 +118,7 @@ class DecentralPlannerAgentLocalWithOnlineExpert(BaseAgent):
         self.time_record = None
         # dummy_input = (torch.zeros(self.config.map_w,self.config.map_w, 3),)
         # self.summary_writer.add_graph(self.model, dummy_input)
+        self.results_file = open('/Users/vtek/gnn_pathplanning/results.txt', 'a+')
 
     def save_checkpoint(self, epoch, is_best=0, lastest=True):
         """
@@ -161,8 +162,8 @@ class DecentralPlannerAgentLocalWithOnlineExpert(BaseAgent):
         filename = os.path.join(self.config.checkpoint_dir_load, file_name)
         try:
             self.logger.info("Loading checkpoint '{}'".format(filename))
-            # checkpoint = torch.load(filename)
-            checkpoint = torch.load(filename, map_location='cuda:{}'.format(self.config.gpu_device))
+            checkpoint = torch.load(filename, map_location=torch.device('cpu'))
+            # checkpoint = torch.load(filename, map_location='cuda:{}'.format(self.config.gpu_device))
 
             self.current_epoch = checkpoint['epoch']
 
@@ -207,8 +208,8 @@ class DecentralPlannerAgentLocalWithOnlineExpert(BaseAgent):
         filename = os.path.join(self.config.checkpoint_dir, file_name)
         try:
             self.logger.info("Loading checkpoint '{}'".format(filename))
-            # checkpoint = torch.load(filename)
-            checkpoint = torch.load(filename, map_location='cuda:{}'.format(self.config.gpu_device))
+            checkpoint = torch.load(filename, map_location=torch.device('cpu'))
+            # checkpoint = torch.load(filename, map_location='cuda:{}'.format(self.config.gpu_device))
 
             self.current_epoch = checkpoint['epoch']
             self.current_iteration = checkpoint['iteration']
@@ -449,8 +450,7 @@ class DecentralPlannerAgentLocalWithOnlineExpert(BaseAgent):
 
         self.summary_writer = self.recorder.summary(label, self.summary_writer, self.current_epoch)
 
-
-        self.logger.info('Accurracy(reachGoalnoCollision): {} \n  '                        
+        results = ('Accurracy(reachGoalnoCollision): {} \n  '                        
                          'DeteriorationRate(MakeSpan): {} \n  '
                          'DeteriorationRate(FlowTime): {} \n  '
                          'Rate(collisionPredictedinLoop): {} \n  '
@@ -461,7 +461,9 @@ class DecentralPlannerAgentLocalWithOnlineExpert(BaseAgent):
                                                                   round(self.recorder.rateCollisionPredictedinLoop, 4),
                                                                   round(self.recorder.rateFailedReachGoalSH, 4),
                                                                   ))
-
+        self.logger.info(results)
+        self.results_file.write('K={}, OE\n'.format(self.config.nGraphFilterTaps))
+        self.results_file.write(results)
         # if self.config.mode == 'train' and self.plot_graph:
         #     self.summary_writer.add_graph(self.model,None)
         #     self.plot_graph = False
@@ -579,5 +581,8 @@ class DecentralPlannerAgentLocalWithOnlineExpert(BaseAgent):
         self.data_loader.finalize()
         if self.config.mode == 'test':
             print("################## End of testing ################## ")
-            print("Computation time:\t{} ".format(self.time_record))
+            time = "Computation time:\n{} ".format(self.time_record)
+            print(time)
+            self.results_file.write(time)
+            self.results_file.close()
 

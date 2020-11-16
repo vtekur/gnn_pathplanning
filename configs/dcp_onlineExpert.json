@@ -3,9 +3,9 @@
   "agent": "DecentralPlannerAgentLocalWithOnlineExpert",
   "data_loader": "DecentralPlannerDataLoader",
 
-  "data_root": "/local/scratch/ql295/Data/MultiAgentDataset/DataSource_DMap/",
-  "save_data": "/local/scratch/ql295/Data/MultiAgentDataset/",
-  "save_tb_data": "/local/scratch/ql295/Data/MultiAgentDataset/Tensorboard_CG50/",
+  "data_root": "/Users/vtek/gnn_pathplanning",
+  "save_data": "/Users/vtek/gnn_pathplanning",
+  "save_tb_data": "/Users/vtek/gnn_pathplanning",
 
   "map_w": 20,
   "map_h": 20,
@@ -29,7 +29,7 @@
   "test_general": false,
   "train_TL": false,
 
-  "cuda": true,
+  "cuda": false,
   "gpu_device": 0,
 
   "checkpoint_file": "checkpoint.pth.tar",
