@@ -118,7 +118,7 @@ class DecentralPlannerAgentLocalWithOnlineExpert(BaseAgent):
         self.time_record = None
         # dummy_input = (torch.zeros(self.config.map_w,self.config.map_w, 3),)
         # self.summary_writer.add_graph(self.model, dummy_input)
-        self.results_file = open(self.config.data_root + 'results.txt', 'a+')
+        self.results_file = open(self.config.data_root + '/results.txt', 'a+')
 
     def save_checkpoint(self, epoch, is_best=0, lastest=True):
         """
