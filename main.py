@@ -68,6 +68,13 @@ def main():
     arg_parser.add_argument('--log_anime', action='store_true', default=False)
     arg_parser.add_argument('--rate_maxstep', type=int, default=2)
     arg_parser.add_argument('--commR', type=int, default=6)
+    arg_parser.add_argument('--map_noise_prob', type=float, default=None)
+    arg_parser.add_argument('--map_shift_units', type=int, default=None)
+    arg_parser.add_argument('--feature_noise_std', type=float, default=None)
+    arg_parser.add_argument('--move_noise_std', type=float, default=None)
+    arg_parser.add_argument('--comm_dropout_param', type=float, default=None)
+    arg_parser.add_argument('--sybil_attack_count', type=float, default=None)
+    arg_parser.add_argument('--rogue_agent_count', type=float, default=None)
     np.random.seed(1337)
     random.seed(1337)
 
@@ -79,6 +86,7 @@ def main():
     # Create the Agent and pass all the configuration to it then run it..
     agent_class = globals()[config.agent]
     agent = agent_class(config)
+
     agent.run()
     agent.finalize()
 

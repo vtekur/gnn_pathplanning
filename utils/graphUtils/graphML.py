@@ -2270,7 +2270,7 @@ class GraphFilterBatchGSO(GraphFilter):
             reprString += "no GSO stored"
         return reprString
 
-def BatchLSIGF(h, S, x, b=None):
+def BatchLSIGF(h, S, x, b=None, feature_noise_std=None, sybil_attack_count=None):
     """
     LSIGF(filter_taps, GSO, input, bias=None) Computes the output of a linear
         shift-invariant graph filter on input and then adds bias.
@@ -2300,6 +2300,10 @@ def BatchLSIGF(h, S, x, b=None):
         bias (torch.tensor): shape: output_features x number_nodes
             if the same bias is to be applied to all nodes, set number_nodes = 1
             so that b_{f} vector becomes b_{f} \mathbf{1}_{N}
+        feature_noise_std(float): standard deviation of gaussian noise added to input features
+            that are communicated
+        sybil_attack_count(int): number of agents that are spoofed (first n agents are spoofed)
+            in a modelled sybil attack
 
     Outputs:
         output: filtered signals; shape:
@@ -2340,12 +2344,24 @@ def BatchLSIGF(h, S, x, b=None):
     # B x E x K x G x N.
     # For this, we first add the corresponding dimensions
     x = x.reshape([B, 1, G, N])
-    # print(S)
     S = S.reshape([B, E, N, N])
     z = x.reshape([B, 1, 1, G, N]).repeat(1, E, 1, 1, 1) # This is for k = 0
     # We need to repeat along the E dimension, because for k=0, S_{e} = I for
     # all e, and therefore, the same signal values have to be used along all
     # edge feature dimensions.
+
+    if feature_noise_std:
+        # add noise to communicated features
+        # (for each robot, its own features are not noisy, but communicated features are)
+        x = x + torch.normal(mean=0.0,std=feature_noise_std,size=list(x.shape))
+    if sybil_attack_count:
+        # spoof first 'sybil_attack_count' messages (feature maps communicated)
+        # get non-spoofed messages
+        non_spoofed_features = x[:,:,:,-(x.shape[3] - sybil_attack_count):]
+        spoofed_features_size = list(x.shape)
+        spoofed_features_size[3] = sybil_attack_count
+        # concatenate spoofed and non spoofed messages
+        x = torch.cat((torch.rand(spoofed_features_size), non_spoofed_features), dim=3)
     for k in range(1,K):
         x = torch.matmul(x, S.float()) # B x E x G x N
         xS = x.reshape([B, E, 1, G, N]) # B x E x 1 x G x N
@@ -2384,6 +2400,10 @@ class GraphFilterBatch(nn.Module):
             edge_features (int): number of features over each edge
             bias (bool): add bias vector (one bias per feature) after graph
                 filtering
+            feature_noise_std(float): standard deviation of gaussian noise added to input features
+                that are communicated
+            sybil_attack_count(int): number of agents that are spoofed (first n agents are spoofed)
+                in a modelled sybil attack
 
         Output:
             torch.nn.Module for a graph filtering layer (also known as graph
@@ -2416,7 +2436,7 @@ class GraphFilterBatch(nn.Module):
                 batch_size x out_features x number_nodes
     """
 
-    def __init__(self, G, F, K, E = 1, bias = True):
+    def __init__(self, G, F, K, E = 1, bias = True, feature_noise_std = None, sybil_attack_count = None):
         # K: Number of filter taps
         # GSOs will be added later.
         # This combines both weight scalars and weight vectors.
@@ -2436,6 +2456,8 @@ class GraphFilterBatch(nn.Module):
             self.bias = nn.parameter.Parameter(torch.Tensor(F, 1))
         else:
             self.register_parameter('bias', None)
+        self.feature_noise_std = feature_noise_std
+        self.sybil_attack_count = sybil_attack_count
         # Initialize parameters
         self.reset_parameters()
 
@@ -2446,7 +2468,7 @@ class GraphFilterBatch(nn.Module):
         if self.bias is not None:
             self.bias.data.uniform_(-stdv, stdv)
 
-    def addGSO(self, S):
+    def addGSO(self, S, comm_loss_mask = None):
         # Every S has 4 dimensions.
         assert len(S.shape) == 4
         # S is of shape B x E x N x N
@@ -2454,6 +2476,11 @@ class GraphFilterBatch(nn.Module):
         self.N = S.shape[2]
         assert S.shape[3] == self.N
         self.S = S
+        if comm_loss_mask != None:
+            # multiply adjacency matrix by communication loss mask,
+            # which drops out each message between robots i,j with probability 
+            # max_prob * distance(i,j)/(communication radius)
+            self.S *= comm_loss_mask
 
     def forward(self, x):
         # x is of shape: batchSize x dimInFeatures x numberNodesIn
@@ -2467,7 +2494,7 @@ class GraphFilterBatch(nn.Module):
                                    .type(x.dtype).to(x.device)
                           ), dim = 2)
         # Compute the filter output
-        u = BatchLSIGF(self.weight, self.S, x, self.bias)
+        u = BatchLSIGF(self.weight, self.S, x, self.bias, self.feature_noise_std, self.sybil_attack_count)
         # So far, u is of shape batchSize x dimOutFeatures x numberNodes
         # And we want to return a tensor of shape
         # batchSize x dimOutFeatures x numberNodesIn

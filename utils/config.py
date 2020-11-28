@@ -99,6 +99,17 @@ def process_config(args):
     config.log_anime = args.log_anime
     config.rate_maxstep = args.rate_maxstep
     config.commR = args.commR
+
+    # Add noise model parameters to config
+    config.map_noise_prob = args.map_noise_prob
+    config.map_shift_units = args.map_shift_units
+    config.feature_noise_std = args.feature_noise_std
+    config.move_noise_std = args.move_noise_std
+    config.comm_dropout_param = args.comm_dropout_param
+
+    # Add attack model parameters to config
+    config.sybil_attack_count = args.sybil_attack_count
+    config.rogue_agent_count = args.rogue_agent_count
     pprint(config)
 
     # making sure that you have provided the exp_name.

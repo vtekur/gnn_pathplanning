@@ -333,7 +333,6 @@ class multiRobotSim:
         # I will increase the communication radius by 10% each time,
         # but I have to do it consistently within the while loop,
         # so in order to not affect the first value set of communication radius, I will account for that initial 10% outside
-
         if step == 0:
             self.communicationRadius = self.communicationRadius / 1.1
             while graphConnected is False:
@@ -367,7 +366,7 @@ class multiRobotSim:
 
         return W, self.communicationRadius, graphConnected
 
-    def getGSO(self, step):
+    def get_PosAgents(self):
         list_PosAgents = []
         action_CurrentAgents=[]
         for id_agent in range(self.config.num_agents):
@@ -377,7 +376,10 @@ class multiRobotSim:
             currentPredictIndexY = int(currentState_predict[0][1])
             action_CurrentAgents.append([currentPredictIndexX, currentPredictIndexY])
         list_PosAgents.append(action_CurrentAgents)
-        store_PosAgents = np.asarray(list_PosAgents)
+        return np.asarray(list_PosAgents)
+    
+    def getGSO(self, step):
+        store_PosAgents = self.get_PosAgents()
 
         if step == 0:
             self.initCommunicationRadius()
@@ -559,7 +561,7 @@ class multiRobotSim:
         value = abs(goal[0] - current_pos[0]) + abs(goal[1] - current_pos[1])
         return value
 
-    def move(self, actionVec, currentstep):
+    def move(self, actionVec, currentstep, rouge_agent_count=None):
 
         allReachGoal = all(self.count_reachgoal)
         allReachGoal_withoutcollision = False
@@ -582,8 +584,11 @@ class multiRobotSim:
                 #     actionVec_predict_CurrentAgents = torch.mul(actionVec_current, disabled_actionPredict_currentAgent)
 
                 actionVec_current = self.fun_Softmax(actionVec[id_agent])
-
-                actionKey_predict = torch.max(actionVec_current, 1)[1]
+                if rouge_agent_count and id_agent < rouge_agent_count and currentstep % 2 == 1:
+                    # if this is a rouge agent, randomly select an action every other step
+                    actionKey_predict = torch.tensor([np.random.randint(5)])
+                else:
+                    actionKey_predict = torch.max(actionVec_current, 1)[1]
 
                 # set flag of the timestep that agent start to move
                 check_move = (actionKey_predict != self.stopKeyValue)

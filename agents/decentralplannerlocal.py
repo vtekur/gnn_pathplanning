@@ -44,8 +44,17 @@ class DecentralPlannerAgentLocal(BaseAgent):
 
         self.recorder = MonitoringMultiAgentPerformance(self.config)
 
-        self.model = DecentralPlannerNet(self.config)
+        self.model = DecentralPlannerNet(self.config, config.feature_noise_std, config.sybil_attack_count)
         self.logger.info("Model: \n".format(print(self.model)))
+
+        # Add additional noise model parameters to config
+        self.map_noise_prob = config.map_noise_prob
+        self.map_shift_units = config.map_shift_units
+        self.move_noise_std = config.move_noise_std
+        self.comm_dropout_param = config.comm_dropout_param
+
+        # Add additonal attack model parameters to config
+        self.rogue_agent_count = config.rogue_agent_count
 
         # define data_loader
         self.data_loader = DecentralPlannerDataLoader(config=config)
@@ -577,19 +586,53 @@ class DecentralPlannerAgentLocal(BaseAgent):
             #print(" Computation time \t-[getGSO]-\t\t :{} ".format(deltaT_getGSO))
 
             gsoGPU = gso.to(self.config.device)
+            pos_agents = self.robot.get_PosAgents()
             self.model.addGSO(gsoGPU)
-            # self.model.addGSO(gsoGPU.unsqueeze(0))
+
+            # model sensor failure by randomly flipping bits of 
+            # map (which consists of 0s to indicate no object and 1s to indicate object)
+            if self.map_noise_prob:
+                bit_flip_mask = (torch.rand(currentStateGPU.shape) < self.map_noise_prob).to(self.config.device)
+                # bits in mask each = 1 with probability specified
+                # so xoring with this mask flips bits in map with probability specified
+                currentStateGPU = torch.logical_xor(currentStateGPU, bit_flip_mask).float().to(self.config.device)
+
+            # model miscalibration of sensor - shift map bits up by some number of units
+            if self.map_shift_units:
+                shifted_maps = currentStateGPU[:,:,:,-(currentStateGPU.shape[3] - self.map_shift_units):,:]
+                # zero pad the missing rows of the field of view maps
+                zero_pad_size = list(currentStateGPU.shape)
+                zero_pad_size[3] = self.map_shift_units
+                currentStateGPU = torch.cat((shifted_maps, torch.zeros(tuple(zero_pad_size), dtype = torch.float)), dim=3).to(self.config.device)
+
+            
+            if self.comm_dropout_param:
+                # noise model:
+                # create mask to drop out each message between robots i,j with probability 
+                # max(1,theta * distance(i,j)/(communication radius))
+                distances = squareform(pdist(self.robot.get_PosAgents()[0])) 
+                loss_prob = torch.from_numpy(self.comm_dropout_param/self.robot.communicationRadius * distances).to(self.config.device)
+                loss_prob = torch.reshape(loss_prob, (1,1,loss_prob.shape[0], loss_prob.shape[1]))
+                comm_loss_mask = (torch.rand(loss_prob.shape) > loss_prob).to(self.config.device)
+            else:
+                comm_loss_mask = None
 
             step_start = time.process_time()
-            actionVec_predict = self.model(currentStateGPU)
+            actionVec_predict = self.model(currentStateGPU, comm_loss_mask)
+            # softmax of actionVec_predict is used to determine probabilities of each of the 5 moves
+            # (so at test time, the argmax of actionVec_predict is taken as the move).
+            # To simulate control errors (e.g. motors not properly responding to commands, breaking, wheels slipping, etc)
+            # we add gaussian noise to actionVec_predict
+            if self.move_noise_std:
+                for av in actionVec_predict:
+                    av += torch.normal(0.0,self.move_noise_std,list(av.shape))
 
             time_ForwardPass = time.process_time() - step_start
-            #print(" Computation time \t-[predictAction]-\t :{} ".format(time_ForwardPass))
 
 
 
             step_move = time.process_time()
-            allReachGoal, check_moveCollision, check_predictCollision = self.robot.move(actionVec_predict, currentStep)
+            allReachGoal, check_moveCollision, check_predictCollision = self.robot.move(actionVec_predict, currentStep, self.rogue_agent_count)
             deltaT_move = time.process_time() - step_move
             #print(" Computation time \t-[move]-\t\t :{} ".format(deltaT_move))
             #print(" Computation time \t-[loopStep]-\t\t :{}\n ".format(time.process_time() - t0_getState))

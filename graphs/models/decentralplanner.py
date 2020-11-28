@@ -5,13 +5,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from graphs.weights_initializer import weights_init
+from scipy.spatial.distance import squareform, pdist
 import numpy as np
 import utils.graphUtils.graphML as gml
 import utils.graphUtils.graphTools
 from torchsummaryX import summary
 
 class DecentralPlannerNet(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, feature_noise_std=None, sybil_attack_count=None):
         super().__init__()
         self.config = config
         self.S = None
@@ -208,11 +209,15 @@ class DecentralPlannerNet(nn.Module):
         self.K = nGraphFilterTaps  # nFilterTaps # Filter taps
         self.E = 1  # Number of edge features
         self.bias = True
+        print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n')
+        print('Input size into first GNN: {}\n'.format(self.F[0]))
+        print('Output size of first GNN: {}\n'.format(self.F[1]))
+        print('FILTER TAPS {}\n'.format(nGraphFilterTaps))
 
         gfl = []  # Graph Filtering Layers
         for l in range(self.L):
             # \\ Graph filtering stage:
-            gfl.append(gml.GraphFilterBatch(self.F[l], self.F[l + 1], self.K[l], self.E, self.bias))
+            gfl.append(gml.GraphFilterBatch(self.F[l], self.F[l + 1], self.K[l], self.E, self.bias, feature_noise_std, sybil_attack_count))
             # There is a 2*l below here, because we have three elements per
             # layer: graph filter, nonlinearity and pooling, so after each layer
             # we're actually adding elements to the (sequential) list.
@@ -274,8 +279,10 @@ class DecentralPlannerNet(nn.Module):
             assert len(S.shape) == 4
             assert S.shape[1] == self.E
             self.S = S
+            
 
-    def forward(self, inputTensor):
+
+    def forward(self, inputTensor, comm_loss_mask=None):
 
         B = inputTensor.shape[0] # batch size
 
@@ -288,6 +295,13 @@ class DecentralPlannerNet(nn.Module):
             # extractFeatureMap[:, :, id_agent] = featureMapFlatten
             compressfeature = self.compressMLP(featureMapFlatten)
             extractFeatureMap[:, :, id_agent] = compressfeature # B x F x N
+            if id_agent == 0:
+                pass
+                #print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n")
+                #print("INPUT MAP SHAPE {}\n".format(input_currentAgent.shape))
+                #print("FEATURE MAP SHAPE BEFORE FLATTEN {}\n".format(featureMap.shape))
+                #print("FEATURE MAP SHAPE AFTER FLATTEN {}\n".format(featureMapFlatten.shape))
+                #print("FEATURE MAP SHAPE AFTER COMPRESS {}\n".format(compressfeature.shape))
 
         # DCP
         for l in range(self.L):
@@ -295,7 +309,7 @@ class DecentralPlannerNet(nn.Module):
             # There is a 3*l below here, because we have three elements per
             # layer: graph filter, nonlinearity and pooling, so after each layer
             # we're actually adding elements to the (sequential) list.
-            self.GFL[2 * l].addGSO(self.S) # add GSO for GraphFilter
+            self.GFL[2 * l].addGSO(self.S, comm_loss_mask) # add GSO for GraphFilter
 
         # B x F x N - > B x G x N,
         sharedFeature = self.GFL(extractFeatureMap)
