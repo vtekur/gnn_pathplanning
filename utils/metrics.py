@@ -112,25 +112,23 @@ class MonitoringMultiAgentPerformance:
         [self.makespanPredict, self.makespanTarget] = compare_makespan
         [self.flowtimePredict, self.flowtimeTarget] = compare_flowtime
 
-        rate_deltaMP = abs(self.makespanPredict - self.makespanTarget) / self.makespanTarget
-        rate_deltaFT = abs(self.flowtimePredict - self.flowtimeTarget) / self.flowtimeTarget
-
-        self.list_MP_predict.append(self.makespanPredict)
-        self.list_MP_target.append(self.makespanTarget)
-        self.list_FT_predict.append(self.flowtimePredict)
-        self.list_FT_target.append(self.flowtimeTarget)
-
-        if self.nonRogueFlowtimePredict and allReachGoal:
-            self.list_nonRogueAgentFT.append(self.nonRogueFlowtimePredict)
+        if self.config.distribution == "default":
+            rate_deltaMP = abs(self.makespanPredict - self.makespanTarget) / self.makespanTarget
+            rate_deltaFT = abs(self.flowtimePredict - self.flowtimeTarget) / self.flowtimeTarget
+            self.list_MP_predict.append(self.makespanPredict)
+            self.list_MP_target.append(self.makespanTarget)
+            self.list_FT_predict.append(self.flowtimePredict)
+            self.list_FT_target.append(self.flowtimeTarget)
+            self.list_rate_deltaMP.append(rate_deltaMP)
+            self.list_rate_deltaFT.append(rate_deltaFT)
+            if self.nonRogueFlowtimePredict and allReachGoal:
+                self.list_nonRogueAgentFT.append(self.nonRogueFlowtimePredict)
 
         self.listCase_GSO.append(storeCase_GSO)
         self.listCase_commRadius.append(storeCase_communication_radius)
 
         self.list_compareMP.append(compare_makespan)
         self.list_compareFT.append(compare_flowtime)
-
-        self.list_rate_deltaMP.append(rate_deltaMP)
-        self.list_rate_deltaFT.append(rate_deltaFT)
 
         self.list_computationTime.append(time_record)
         self.list_ForwardPassTime.append(Time_cases_ForwardPass)
@@ -248,49 +246,81 @@ class MonitoringMultiAgentPerformance:
         except FileExistsError:
             pass
 
-        self.save_statistics.update({'exp_net': self.config.exp_net,
-                                     'exp_stamps': self.config.exp_time,
-                                     'commRadius': self.config.commR,
-                                     'map_size_trained':[self.config.trained_map_w,self.config.trained_map_w],
-                                     'map_density_trained':self.config.trained_map_density,
-                                     'num_agents_trained': self.config.trained_num_agents,
-                                     'map_size_testing': [self.config.map_w, self.config.map_h],
-                                     'map_density_testing': self.config.map_density,
-                                     'num_agents_testing': self.config.num_agents,
+        if self.config.distribution == "default":
+            self.save_statistics.update({'exp_net': self.config.exp_net,
+                                        'exp_stamps': self.config.exp_time,
+                                        'commRadius': self.config.commR,
+                                        'map_size_trained':[self.config.trained_map_w,self.config.trained_map_w],
+                                        'map_density_trained':self.config.trained_map_density,
+                                        'num_agents_trained': self.config.trained_num_agents,
+                                        'map_size_testing': [self.config.map_w, self.config.map_h],
+                                        'map_density_testing': self.config.map_density,
+                                        'num_agents_testing': self.config.num_agents,
 
-                                     'K': self.config.nGraphFilterTaps,
-                                     'hidden_state':self.config.hiddenFeatures,
+                                        'K': self.config.nGraphFilterTaps,
+                                        'hidden_state':self.config.hiddenFeatures,
 
-                                     'rate_ReachGoal': self.rateReachGoal,
-                                     'num_ReachGoal': self.count_reachGoal,
-                                     'rate_notReachGoalSH': self.rateFailedReachGoalSH,
-                                     'num_notReachGoalSH': self.count_noReachGoalSH,
-                                     'list_reachGoal': self.list_reachGoal,
-                                     'list_noReachGoalSH': self.list_noReachGoalSH,
-                                     'list_numAgentReachGoal': self.list_numAgentReachGoal,
-                                     'hist_numAgentReachGoal': self.count_numAgentReachGoal,
+                                        'rate_ReachGoal': self.rateReachGoal,
+                                        'num_ReachGoal': self.count_reachGoal,
+                                        'rate_notReachGoalSH': self.rateFailedReachGoalSH,
+                                        'num_notReachGoalSH': self.count_noReachGoalSH,
+                                        'list_reachGoal': self.list_reachGoal,
+                                        'list_noReachGoalSH': self.list_noReachGoalSH,
+                                        'list_numAgentReachGoal': self.list_numAgentReachGoal,
+                                        'hist_numAgentReachGoal': self.count_numAgentReachGoal,
 
-                                     'list_MP_predict': self.list_MP_predict,
-                                     'list_MP_target': self.list_MP_target,
-                                     'list_FT_predict': self.list_FT_predict,
-                                     'list_FT_target': self.list_FT_target,
+                                        'list_MP_predict': self.list_MP_predict,
+                                        'list_MP_target': self.list_MP_target,
+                                        'list_FT_predict': self.list_FT_predict,
+                                        'list_FT_target': self.list_FT_target,
 
-                                     'listCase_GSO': self.listCase_GSO,
-                                     'listCase_commRadius': self.listCase_commRadius,
-                                     'list_computationTime': self.list_computationTime,
-                                     'list_ForwardPassTime':self.list_ForwardPassTime,
+                                        'listCase_GSO': self.listCase_GSO,
+                                        'listCase_commRadius': self.listCase_commRadius,
+                                        'list_computationTime': self.list_computationTime,
+                                        'list_ForwardPassTime':self.list_ForwardPassTime,
 
-                                     'list_compareMP': self.list_compareMP,
-                                     'list_compareFT': self.list_compareFT,
-                                     'list_deltaMP': self.array_rate_deltaMP,
-                                     'mean_deltaMP': self.avg_rate_deltaMP,
-                                     'std_deltaMP': self.std_rate_deltaMP,
-                                     'list_deltaFT': self.array_rate_deltaFT,
-                                     'mean_deltaFT': self.avg_rate_deltaFT,
-                                     'std_deltaFT': self.std_rate_deltaFT,
-                                     'num_CollisionPredicted': self.count_CollisionPredictedinLoop,
-                                     'num_validset': self.count_validset,
-                                     })
+                                        'list_compareMP': self.list_compareMP,
+                                        'list_compareFT': self.list_compareFT,
+                                        'list_deltaMP': self.array_rate_deltaMP,
+                                        'mean_deltaMP': self.avg_rate_deltaMP,
+                                        'std_deltaMP': self.std_rate_deltaMP,
+                                        'list_deltaFT': self.array_rate_deltaFT,
+                                        'mean_deltaFT': self.avg_rate_deltaFT,
+                                        'std_deltaFT': self.std_rate_deltaFT,
+                                        'num_CollisionPredicted': self.count_CollisionPredictedinLoop,
+                                        'num_validset': self.count_validset,
+                                        })
+        else:
+            self.save_statistics.update({'exp_net': self.config.exp_net,
+                                'exp_stamps': self.config.exp_time,
+                                'commRadius': self.config.commR,
+                                'map_size_trained':[self.config.trained_map_w,self.config.trained_map_w],
+                                'map_density_trained':self.config.trained_map_density,
+                                'num_agents_trained': self.config.trained_num_agents,
+                                'map_size_testing': [self.config.map_w, self.config.map_h],
+                                'map_density_testing': self.config.map_density,
+                                'num_agents_testing': self.config.num_agents,
+                                'K': self.config.nGraphFilterTaps,
+                                'hidden_state':self.config.hiddenFeatures,
+                                'rate_ReachGoal': self.rateReachGoal,
+                                'num_ReachGoal': self.count_reachGoal,
+                                'rate_notReachGoalSH': self.rateFailedReachGoalSH,
+                                'num_notReachGoalSH': self.count_noReachGoalSH,
+                                'list_reachGoal': self.list_reachGoal,
+                                'list_noReachGoalSH': self.list_noReachGoalSH,
+                                'list_numAgentReachGoal': self.list_numAgentReachGoal,
+                                'hist_numAgentReachGoal': self.count_numAgentReachGoal,
+                                'list_MP_predict': self.list_MP_predict,
+                                'list_MP_target': self.list_MP_target,
+                                'listCase_GSO': self.listCase_GSO,
+                                'listCase_commRadius': self.listCase_commRadius,
+                                'list_computationTime': self.list_computationTime,
+                                'list_ForwardPassTime':self.list_ForwardPassTime,
+                                'list_compareMP': self.list_compareMP,
+                                'list_compareFT': self.list_compareFT,
+                                'num_CollisionPredicted': self.count_CollisionPredictedinLoop,
+                                'num_validset': self.count_validset,
+                                })
 
         # save the result of inference stage
         exp_HyperPara = "{}_K{}_HS{}_".format(self.config.exp_net, self.config.nGraphFilterTaps, self.config.hiddenFeatures)
@@ -302,3 +332,4 @@ class MonitoringMultiAgentPerformance:
         dsecription = exp_HyperPara + exp_Setup_training + exp_Setup_testing + "{}".format(self.config.exp_time)
         file_name = os.path.join(dir_name,'statistics_{}_comR_{}.mat'.format(dsecription,self.config.commR))
         sio.savemat(file_name, self.save_statistics)
+        
