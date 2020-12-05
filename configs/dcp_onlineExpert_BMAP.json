@@ -52,5 +52,7 @@
 
   "batch_size": 64,
   "valid_batch_size": 1,
-  "test_batch_size": 1
+  "test_batch_size": 1,
+  "distribution": "default",
+  "distribution_num": 0
 }

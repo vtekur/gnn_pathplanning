@@ -3,9 +3,9 @@
   "agent": "DecentralPlannerAgentLocalWithOnlineExpert",
   "data_loader": "DecentralPlannerDataLoader",
 
-  "data_root": "/Users/vtek/gnn_pathplanning",
-  "save_data": "/Users/vtek/gnn_pathplanning",
-  "save_tb_data": "/Users/vtek/gnn_pathplanning",
+  "data_root": "/Users/shuvomsadhuka/Desktop/Junior/Fall/CS286/project/gnn_pathplanning_new",
+  "save_data": "/Users/shuvomsadhuka/Desktop/Junior/Fall/CS286/project/gnn_pathplanning_new",
+  "save_tb_data": "/Users/shuvomsadhuka/Desktop/Junior/Fall/CS286/project/gnn_pathplanning_new",
 
   "map_w": 20,
   "map_h": 20,
@@ -51,5 +51,7 @@
 
   "batch_size": 64,
   "valid_batch_size": 1,
-  "test_batch_size": 1
+  "test_batch_size": 1,
+  "distribution": "default",
+  "distribution_num": 0
 }
