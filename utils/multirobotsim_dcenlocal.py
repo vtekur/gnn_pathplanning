@@ -700,7 +700,7 @@ class multiRobotSim:
                         self.status_MultiAgent[name_agent]["startStep_action_predict"] =  0 # currentstep #
 
         if allReachGoal or (currentstep >= self.maxstep):
-        # else:
+            print("HEEEEEEEEEEEEEEEEEEERE")
             List_endStep = []
             List_startStep = []
             self.flowtimePredict = 0
@@ -715,18 +715,21 @@ class multiRobotSim:
                 List_endStep.append(self.status_MultiAgent[name_agent]["endStep_action_predict"])
                 List_startStep.append(self.status_MultiAgent[name_agent]["startStep_action_predict"])
                 # print("{}- \t Start Step: {} \t End Step: {} \n".format(name_agent, self.status_MultiAgent[name_agent]["startStep_action_predict"], self.status_MultiAgent[name_agent]["endStep_action_predict"]))
-                self.flowtimePredict += self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
-                                        self.status_MultiAgent[name_agent]["startStep_action_predict"]
-                # keep track of flowtime of non rogue agents
-                if rouge_agent_count and id_agent >= rouge_agent_count:
-                    self.nonRogueFlowtimePredict += self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
-                                        self.status_MultiAgent[name_agent]["startStep_action_predict"]
+                if self.config.distribution == "default":
+                    self.flowtimePredict += self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
+                                            self.status_MultiAgent[name_agent]["startStep_action_predict"]
+                    # keep track of flowtime of non rogue agents
+                    if rouge_agent_count and id_agent >= rouge_agent_count:
+                        self.nonRogueFlowtimePredict += self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
+                                            self.status_MultiAgent[name_agent]["startStep_action_predict"]
 
-                len_action_predict = self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
-                                     self.status_MultiAgent[name_agent]["startStep_action_predict"]
-                self.status_MultiAgent[name_agent]["len_action_predict"] = len_action_predict
+                    len_action_predict = self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
+                                        self.status_MultiAgent[name_agent]["startStep_action_predict"]
+                if self.config.distribution == "default":
+                    self.status_MultiAgent[name_agent]["len_action_predict"] = len_action_predict
 
-            self.makespanPredict = max(List_endStep) - min(List_startStep)
+            if self.config.distribution == "default":
+                self.makespanPredict = max(List_endStep) - min(List_startStep)
             if rouge_agent_count:
                 self.nonRogueFlowtimePredict /= (self.config.num_agents - rouge_agent_count)
 
