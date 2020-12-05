@@ -57,7 +57,7 @@ def main():
     arg_parser.add_argument('--nGraphFilterTaps', type=int, default=0)
     arg_parser.add_argument('--hiddenFeatures', type=int, default=0)
 
-    arg_parser.add_argument('--num_testset', type=int, default=1)
+    arg_parser.add_argument('--num_testset', type=int, default=100)
     arg_parser.add_argument('--test_epoch', type=int, default=0)
     arg_parser.add_argument('--lastest_epoch', action='store_true', default=False)
     arg_parser.add_argument('--best_epoch', action='store_true', default=False)
@@ -73,13 +73,12 @@ def main():
     arg_parser.add_argument('--feature_noise_std', type=float, default=None)
     arg_parser.add_argument('--move_noise_std', type=float, default=None)
     arg_parser.add_argument('--comm_dropout_param', type=float, default=None)
-    arg_parser.add_argument('--sybil_attack_count', type=float, default=None)
-    arg_parser.add_argument('--rogue_agent_count', type=float, default=None)
+    arg_parser.add_argument('--sybil_attack_count', type=int, default=None)
+    arg_parser.add_argument('--rogue_agent_count', type=int, default=None)
     np.random.seed(1337)
     random.seed(1337)
 
     args = arg_parser.parse_args()
-
     # parse the config json file
     config = process_config(args)
 

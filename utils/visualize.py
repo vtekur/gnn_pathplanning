@@ -311,16 +311,26 @@ if __name__ == "__main__":
     parser.add_argument("--speed", type=int, default=2, help="speedup-factor")
     parser.add_argument('--log_time_trained', type=str, default='0')
     parser.add_argument('--id_chosenAgent', type=int, default=0)
+    parser.add_argument('--failure_case', type=bool, default=False)
+    parser.add_argument('--name', default=None)
     args = parser.parse_args()
+    if args.failure_case:
+        case_type = 'failure'
+    else:
+        case_type = 'success'
     base_dir = args.local_dir + 'Results_best/AnimeDemo/{}/map20x20_rho1_10Agent/K{}_HS0/TR_M20p1_10Agent/{}/commR_6/'.format(args.type, args.nGraphFilterTaps,args.log_time_trained)
-    args.map = base_dir + 'input/successCases_ID{}.yaml'.format(args.caseId)
-    args.schedule = base_dir+'predict_success/successCases_ID{}.yaml'.format(args.caseId)
-    args.GSO = base_dir+'GSO/successCases_ID{}.mat'.format(args.caseId)
-    args.video = args.local_dir + 'Results_best/' +  '/video_K{}_{}.mp4'.format(args.nGraphFilterTaps, args.type)
+    args.map = base_dir + 'input/{}Cases_ID{}.yaml'.format(case_type, args.caseId)
+    args.schedule = base_dir+'predict_{}/{}Cases_ID{}.yaml'.format(case_type,case_type,args.caseId)
+    args.GSO = base_dir+'GSO/{}Cases_ID{}.mat'.format(case_type,args.caseId)
+    if args.name:
+        args.video = args.local_dir + 'Results_best/' +  '/video_K{}_{}_{}.mp4'.format(args.nGraphFilterTaps, args.type, args.name)
+    else:
+        args.video = args.local_dir + 'Results_best/' +  '/video_K{}_{}.mp4'.format(args.nGraphFilterTaps, args.type)
     animation = Animation(args)
-
     if args.video:
+        print("Starting!")
         animation.save(args.video, args.speed)
+        print("Ending!")
     else:
         animation.show()
 

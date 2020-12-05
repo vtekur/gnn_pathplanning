@@ -538,6 +538,10 @@ class DecentralPlannerAgentLocal(BaseAgent):
         self.logger.info(results)
         self.results_file.write('K={}, no OE\n'.format(self.config.nGraphFilterTaps))
         self.results_file.write(results)
+        if self.recorder.avg_NonRogueFT:
+            nonRogueOut = 'NonRogueFT: {}\n'.format(round(self.recorder.avg_NonRogueFT,4))
+            self.results_file.write(nonRogueOut)
+            self.logger.info(nonRogueOut)
 
         # if self.config.mode == 'train' and self.plot_graph:
         #     self.summary_writer.add_graph(self.model,None)
@@ -692,7 +696,7 @@ class DecentralPlannerAgentLocal(BaseAgent):
 
         # return [allReachGoal, noReachGoalbyCollsionShielding, findOptimalSolution, check_collisionFreeSol, check_CollisionPredictedinLoop, makespanPredict, makespanTarget, flowtimePredict,flowtimeTarget,num_agents_reachgoal]
 
-        return allReachGoal, noReachGoalbyCollsionShielding, findOptimalSolution, check_collisionFreeSol, check_CollisionPredictedinLoop, compare_makespan, compare_flowtime, num_agents_reachgoal, store_GSO, store_communication_radius, time_record,Time_cases_ForwardPass
+        return allReachGoal, noReachGoalbyCollsionShielding, findOptimalSolution, check_collisionFreeSol, check_CollisionPredictedinLoop, compare_makespan, compare_flowtime, num_agents_reachgoal, store_GSO, store_communication_radius, time_record,Time_cases_ForwardPass, self.robot.nonRogueFlowtimePredict
 
 
     def finalize(self):

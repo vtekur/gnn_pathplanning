@@ -36,10 +36,12 @@ class MonitoringMultiAgentPerformance:
         self.makespanTarget = None
         self.flowtimePredict = None
         self.flowtimeTarget = None
+        self.nonRogueFlowtimePredict = None
 
         self.list_reachGoal = None
         self.list_compareMP = None
         self.list_compareFT = None
+        self.list_nonRogueAgentFT = None
 
         self.list_rate_deltaMP = None
         self.list_rate_deltaFT = None
@@ -48,6 +50,7 @@ class MonitoringMultiAgentPerformance:
         self.avg_rate_deltaFT = None
         self.std_rate_deltaMP = None
         self.std_rate_deltaFT = None
+
 
         self.save_statistics = None
 
@@ -83,6 +86,8 @@ class MonitoringMultiAgentPerformance:
         self.list_FT_predict = []
         self.list_FT_target = []
 
+        self.list_nonRogueAgentFT = []
+
         self.list_compareMP = []
         self.list_compareFT = []
 
@@ -103,7 +108,7 @@ class MonitoringMultiAgentPerformance:
 
     def update(self, maxstep, log_result):
 
-        [allReachGoal, noReachGoalbyCollsionShielding, findOptimalSolution, check_collisionFreeSol, check_CollisionPredictedinLoop, compare_makespan, compare_flowtime, num_agents_reachgoal, storeCase_GSO, storeCase_communication_radius, time_record , Time_cases_ForwardPass] = log_result
+        [allReachGoal, noReachGoalbyCollsionShielding, findOptimalSolution, check_collisionFreeSol, check_CollisionPredictedinLoop, compare_makespan, compare_flowtime, num_agents_reachgoal, storeCase_GSO, storeCase_communication_radius, time_record , Time_cases_ForwardPass, self.nonRogueFlowtimePredict] = log_result
         [self.makespanPredict, self.makespanTarget] = compare_makespan
         [self.flowtimePredict, self.flowtimeTarget] = compare_flowtime
 
@@ -114,6 +119,9 @@ class MonitoringMultiAgentPerformance:
         self.list_MP_target.append(self.makespanTarget)
         self.list_FT_predict.append(self.flowtimePredict)
         self.list_FT_target.append(self.flowtimeTarget)
+
+        if self.nonRogueFlowtimePredict and allReachGoal:
+            self.list_nonRogueAgentFT.append(self.nonRogueFlowtimePredict)
 
         self.listCase_GSO.append(storeCase_GSO)
         self.listCase_commRadius.append(storeCase_communication_radius)
@@ -167,6 +175,8 @@ class MonitoringMultiAgentPerformance:
 
 
         self.array_rate_deltaMP = np.array(self.list_rate_deltaMP)
+        print(self.list_rate_deltaFT)
+        print(len(self.list_rate_deltaFT))
         self.array_rate_deltaFT = np.array(self.list_rate_deltaFT)
 
         self.avg_rate_deltaMP = np.mean(self.array_rate_deltaMP)
@@ -176,6 +186,12 @@ class MonitoringMultiAgentPerformance:
         self.avg_rate_deltaFT = np.mean(self.array_rate_deltaFT)
         self.std_rate_deltaFT = np.std(self.array_rate_deltaFT, ddof=1)
         # sample std
+
+        # Use to determine flowtime of non rogue
+        if self.list_nonRogueAgentFT and len(self.list_nonRogueAgentFT) > 0:
+            self.avg_NonRogueFT = np.mean(np.array(self.list_nonRogueAgentFT))
+        else:
+            self.avg_NonRogueFT = None
 
 
 

@@ -90,6 +90,8 @@ class multiRobotSim:
         self.flowtimeTarget = 0
         self.makespanPredict = self.maxstep
         self.flowtimePredict = self.maxstep * self.config.num_agents #0
+        # used for determining flowtimes of non rouge agents
+        self.nonRogueFlowtimePredict = None
 
         self.stopKeyValue = torch.tensor(4).to(self.config.device)
         self.reset_disabled_action = torch.tensor([1.0, 1.0, 1.0, 1.0, 1.0]).float().to(self.config.device)
@@ -702,7 +704,8 @@ class multiRobotSim:
             List_endStep = []
             List_startStep = []
             self.flowtimePredict = 0
-
+            if rouge_agent_count:
+                self.nonRogueFlowtimePredict = 0
             # if (currentstep >= self.maxstep):
             #     print("################## End of loop ################## ")
             #     print("####### Case{} \t Step{}/{}\t- AllReachGoal-{}".format(self.ID_dataset, currentstep, self.maxstep,
@@ -714,12 +717,18 @@ class multiRobotSim:
                 # print("{}- \t Start Step: {} \t End Step: {} \n".format(name_agent, self.status_MultiAgent[name_agent]["startStep_action_predict"], self.status_MultiAgent[name_agent]["endStep_action_predict"]))
                 self.flowtimePredict += self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
                                         self.status_MultiAgent[name_agent]["startStep_action_predict"]
+                # keep track of flowtime of non rogue agents
+                if rouge_agent_count and id_agent >= rouge_agent_count:
+                    self.nonRogueFlowtimePredict += self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
+                                        self.status_MultiAgent[name_agent]["startStep_action_predict"]
 
                 len_action_predict = self.status_MultiAgent[name_agent]["endStep_action_predict"] - \
                                      self.status_MultiAgent[name_agent]["startStep_action_predict"]
                 self.status_MultiAgent[name_agent]["len_action_predict"] = len_action_predict
 
             self.makespanPredict = max(List_endStep) - min(List_startStep)
+            if rouge_agent_count:
+                self.nonRogueFlowtimePredict /= (self.config.num_agents - rouge_agent_count)
 
             # if (currentstep >= self.maxstep):
             #     print("\t\t Makespan(Predict/Target) {}/{} \t flowtime(Predict/Target){}/{} \n\n ".format(self.makespanPredict, self.makespanTarget,

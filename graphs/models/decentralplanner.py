@@ -209,10 +209,6 @@ class DecentralPlannerNet(nn.Module):
         self.K = nGraphFilterTaps  # nFilterTaps # Filter taps
         self.E = 1  # Number of edge features
         self.bias = True
-        print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n')
-        print('Input size into first GNN: {}\n'.format(self.F[0]))
-        print('Output size of first GNN: {}\n'.format(self.F[1]))
-        print('FILTER TAPS {}\n'.format(nGraphFilterTaps))
 
         gfl = []  # Graph Filtering Layers
         for l in range(self.L):
