@@ -190,10 +190,32 @@ class CreateDataset(data.Dataset):
 
         input_sequence = data_contents['inputState']  # num_agent x 2
         target_sequence = data_contents['target']  # step x num_agent x 5
+        bots_to_change = 0
+        if int(self.config.distribution_num) != 0: bots_to_change = int(self.config.distribution_num)
+        idxs = []
+        for i in range(bots_to_change):
+            num = 0
+            idx = np.random.choice(range(len(input_sequence)))
+            while (idx in idxs) and num < 10:
+                idx = np.random.choice(range(len(input_sequence)))
+                num += 1
+            if self.config.distribution == "LLQ":
+                print("RUNNING LLQ")
+                choice = [np.random.choice(range(int(map_channel.shape[0]/2))), np.random.choice(range(int(map_channel.shape[1]/2)))]
+                num = 0
+                while (map_channel[choice[0]][choice[1]] == 1 or choice in input_sequence) and num < 10: 
+                    choice = [np.random.choice(range(int(map_channel.shape[0]/2))), np.random.choice(range(int(map_channel.shape[1]/2)))]
+                input_sequence[idx] = np.array(choice)
+            if self.config.distribution == "edge":
+                print("RUNNING EDGE")
+                edge = np.random.choice([0,1])
+                if edge == 0 and map_channel[0][int(input_sequence[idx][1])] != 1 and [0,int(input_sequence[idx][1])] not in input_sequence:
+                    input_sequence[idx][0] = 0
+                if edge == 1 and map_channel[int(input_sequence[idx][0])][0] != 1 and [input_sequence[idx][0], 0] not in input_sequence:
+                    input_sequence[idx][1] = 0
 
         self.AgentState.setmap(map_channel)
         step_input_tensor = self.AgentState.stackinfo(goal_allagents, input_sequence)
-
         step_target = torch.from_numpy(target_sequence).long()
         # from step x num_agent x action (5) to  id_agent x step x action(5)
         step_target = step_target.permute(1, 0, 2)
@@ -267,32 +289,3 @@ class CreateDataset(data.Dataset):
 
     def __len__(self):
         return self.data_size
-
-
-#
-# if __name__ == '__main__':
-#     config = {'mode': "train",
-#               'num_agents': 8,
-#               'map_w': 20,
-#               'map_h': 20,
-#               'map_density': 1,
-#
-#               'data_root': '/local/scratch/ql295/Data/Project/OnlineExpert_testbed/Quick_Test/DataSourceTri_nonTF_ECBS',
-#               'failCases_dir': '/local/scratch/ql295/Data/Project/OnlineExpert_testbed/Quick_Test/Cache_data',
-#               'exp_net': 'dcp',
-#               "num_test_trainingSet": 2,
-#               "num_validStep": 100,
-#               "num_validset": 2,
-#               "num_testset": 1,
-#
-#               "data_loader_workers": 0,
-#               "pin_memory": True,
-#               "async_loading": True,
-#
-#               "batch_size": 64,
-#               "valid_batch_size": 1,
-#               "test_batch_size": 1
-#               }
-#     config_setup = EasyDict(config)
-#     data_loader = DecentralPlannerDataLoader(config_setup)
-#
