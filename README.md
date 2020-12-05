@@ -1,3 +1,5 @@
+Below is the README for the original paper:
+
 # PyTorch Project for Graph Neural Network based MAPF
 Code accompanying the paper
 
